@@ -3,17 +3,73 @@ from tkinter import ttk
 from datetime import datetime
 import requests
 
-# --- Целевые валюты (полный список CoinGecko) ---
-TARGET_CURRENCIES = [
-#    "btc", "eth", "ltc", "bch", "bnb", "eos", "xrp", "xlm", "link", "dot",
-#    "yfi", "sol",
-    "usd", "eur", "rub", "cny", "aed", "ars", "aud", "bdt", "bhd", "bmd",
-    "brl", "cad", "chf", "clp", "czk", "dkk", "gbp", "gel", "hkd",
-    "huf", "idr", "ils", "inr", "jpy", "krw", "kwd", "lkr", "mmk", "mxn",
-    "myr", "ngn", "nok", "nzd", "php", "pkr", "pln", "sar", "sek",
-    "sgd", "thb", "try", "twd", "uah", "vef", "vnd", "zar", "xdr", "xag",
-    "xau", "bits", "sats"
-]
+# Целевые валюты (полный список CoinGecko)
+# Код валюты -> русское название (для отображения в комбобоксе)
+TARGET_CURRENCY_NAMES = {
+    "usd": "Доллар США",
+    "eur": "Евро",
+    "rub": "Российский рубль",
+    "cny": "Китайский юань",
+    "aed": "Дирхам ОАЭ",
+    "ars": "Аргентинское песо",
+    "aud": "Австралийский доллар",
+    "bdt": "Бангладешская така",
+    "bhd": "Бахрейнский динар",
+    "bmd": "Бермудский доллар",
+    "brl": "Бразильский реал",
+    "cad": "Канадский доллар",
+    "chf": "Швейцарский франк",
+    "clp": "Чилийское песо",
+    "czk": "Чешская крона",
+    "dkk": "Датская крона",
+    "gbp": "Британский фунт",
+    "gel": "Грузинский лари",
+    "hkd": "Гонконгский доллар",
+    "huf": "Венгерский форинт",
+    "idr": "Индонезийская рупия",
+    "ils": "Израильский шекель",
+    "inr": "Индийская рупия",
+    "jpy": "Японская иена",
+    "krw": "Южнокорейская вона",
+    "kwd": "Кувейтский динар",
+    "lkr": "Шри-ланкийская рупия",
+    "mmk": "Мьянманский кьят",
+    "mxn": "Мексиканское песо",
+    "myr": "Малайзийский ринггит",
+    "ngn": "Нигерийская найра",
+    "nok": "Норвежская крона",
+    "nzd": "Новозеландский доллар",
+    "php": "Филиппинское песо",
+    "pkr": "Пакистанская рупия",
+    "pln": "Польский злотый",
+    "sar": "Саудовский риял",
+    "sek": "Шведская крона",
+    "sgd": "Сингапурский доллар",
+    "thb": "Тайский бат",
+    "try": "Турецкая лира",
+    "twd": "Тайваньский доллар",
+    "uah": "Украинская гривна",
+    "vef": "Венесуэльский боливар",
+    "vnd": "Вьетнамский донг",
+    "zar": "Южноафриканский ранд",
+    "xdr": "СПЗ (валютная корзина МВФ)",
+    "xag": "Серебро (унция)",
+    "xau": "Золото (унция)",
+    "bits": "Биты (микробиткоин)",
+    "sats": "Сатоши",
+}
+
+TARGET_CURRENCIES = list(TARGET_CURRENCY_NAMES.keys())  # коды для API
+
+def currency_display(code: str) -> str:
+    return f"{TARGET_CURRENCY_NAMES[code]} ({code.upper()})"
+
+# Для комбобокса: "Доллар США - USD", "Евро - EUR", ...
+target_display_values = [currency_display(code) for code in TARGET_CURRENCIES]
+# Обратное соответствие: "Доллар США - USD" -> "usd"
+display_to_currency = {currency_display(code): code for code in TARGET_CURRENCIES}
+
+
 
 API_URL = "https://api.coingecko.com/api/v3"
 
@@ -39,20 +95,6 @@ except requests.exceptions.RequestException as e:
     print("Ошибка запроса:", e)
 
 
-# # Данные по монетам (здесь — сокращённо; у вас они получаются из /coins/markets)
-# data = [
-#     {'id': 'bitcoin', 'symbol': 'btc', 'name': 'Bitcoin', 'current_price': 76992,
-#      'market_cap': 1548263910690, 'price_change_percentage_24h': -1.24482,
-#      'last_updated': '2026-11-03T12:12:56.000Z'},
-#     {'id': 'ethereum', 'symbol': 'eth', 'name': 'Ethereum', 'current_price': 2264.19,
-#      'market_cap': 276700170215, 'price_change_percentage_24h': -1.18992,
-#      'last_updated': '2026-11-03T12:12:56.000Z'},
-#     {'id': 'tether', 'symbol': 'usdt', 'name': 'Tether', 'current_price': 0.998634,
-#      'market_cap': 178867203026, 'price_change_percentage_24h': -0.04269,
-#      'last_updated': '2026-11-03T12:12:56.000Z'},
-# ]
-
-#currencies = {coin['symbol']: coin for coin in data}
 
 # Словарь: symbol -> coin
 currencies = {coin['symbol']: coin for coin in data}
@@ -107,14 +149,15 @@ root.title("Курсы криптовалют")
 root.geometry("440x440")
 
 tk.Label(root, text='Базовая валюта (coin)', font=('Arial', 11, 'bold')).pack(pady=5)
-base_combobox = ttk.Combobox(root, values=combo_display_values, state='readonly')
+base_combobox = ttk.Combobox(root, values=combo_display_values, state='readonly', width = 55)
 base_combobox.pack(pady=3, padx=10)
 base_combobox.current(0)
 
 tk.Label(root, text='Целевая валюта', font=('Arial', 11, 'bold')).pack(pady=5)
-target_combobox = ttk.Combobox(root, values=TARGET_CURRENCIES, state='readonly')
+target_combobox = ttk.Combobox(root, values=target_display_values, state='readonly', width = 35)
 target_combobox.pack(pady=3, padx=10)
-target_combobox.set('usd')
+target_combobox.current(TARGET_CURRENCIES.index('usd'))  # по умолчанию USD
+
 
 # --- Рамка «Курс в выбранной валюте» ---
 course_frame = tk.LabelFrame(root, text="Курс в выбранной валюте",
@@ -180,7 +223,13 @@ def update_info(event=None, refresh=False):
         # На всякий случай: если что-то пошло не так, пробуем взять первый элемент
         base_sym = list(currencies.keys())[0]
 
-    target = target_combobox.get()
+    #target = target_combobox.get()
+
+    target_display = target_combobox.get()          # "Доллар США - USD"
+    target = display_to_currency.get(target_display)  # "usd"
+    if target is None:                              # защита от рассинхрона
+        target = 'usd'
+
     coin = currencies[base_sym]
 
     prices = prices_cache.get(coin['id'])
