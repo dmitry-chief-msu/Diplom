@@ -1,19 +1,24 @@
 import requests
 
+print('Спавочник текущих курсов криптовалют')
+main_cur = input('Введите целевую валюту (USD/EUR/RUB... :')
+
 url = "https://api.coingecko.com/api/v3/coins/markets"
 params = {
-    "vs_currency": "usd",
+    "vs_currency": main_cur,
     "order": "market_cap_desc",
     "per_page": 100,
     "page": 1,
     "sparkline": False
 }
 
+
+
 try:
     response = requests.get(url, params=params, timeout=10)
     response.raise_for_status()
     data = response.json()
-    print(data)
+    #print(data)
 except requests.exceptions.RequestException as e:
     print("Ошибка запроса:", e)
 
@@ -49,7 +54,7 @@ def print_crypto_info(crypto):
   #  print(f"- Символ: {crypto['symbol'].upper()}")
   #  print(f"- Название: {name}")
   #  print(f"- Изображение: {crypto['image']}")
-    print(f"- Текущая цена: {format_value(crypto['current_price'])}")
+    print(f"- Текущая цена: {format_value(crypto['current_price'])} {params['vs_currency']}")
     # print(f"- Рыночная капитализация: {format_value(crypto['market_cap'])}")
     # print(f"- Ранг по рыночной капитализации: {format_value(crypto['market_cap_rank'])}")
     # print(f"- Полностью разводнённая оценка: {format_value(crypto['fully_diluted_valuation'])}")
