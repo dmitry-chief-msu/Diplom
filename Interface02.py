@@ -54,6 +54,14 @@ except requests.exceptions.RequestException as e:
 
 currencies = {coin['symbol']: coin for coin in data}
 
+# --- Форматирование цены ---
+def format_price(value) -> str:
+    if value is None:
+        return '—'
+    if value >= 1:
+        return f"{value:,.2f}"
+    return f"{value:,.8f}".rstrip('0').rstrip('.')
+
 # --- Форматирование даты ---
 def format_last_updated(iso_string: str) -> str:
     try:
@@ -102,6 +110,21 @@ target_combobox.set('usd')
 info_label = tk.Label(root, text='', justify='left', anchor='w')
 info_label.pack(fill='x', padx=15, pady=8)
 
+
+# --- Три поля по горизонтали: цена в USD / EUR / RUB ---
+prices_frame = tk.Frame(root)
+prices_frame.pack(fill='x', padx=15, pady=8)
+
+price_usd_label = tk.Label(prices_frame, text='Цена (USD): —', anchor='w')
+price_eur_label = tk.Label(prices_frame, text='Цена (EUR): —', anchor='w')
+price_rub_label = tk.Label(prices_frame, text='Цена (RUB): —', anchor='w')
+
+# Растягиваем все три колонки поровну
+prices_frame.columnconfigure((0, 1, 2), weight=1, uniform='price_cols')
+price_usd_label.grid(row=0, column=0, sticky='w')
+price_eur_label.grid(row=0, column=1, sticky='w')
+price_rub_label.grid(row=0, column=2, sticky='w')
+
 status_label = tk.Label(root, text='', fg='gray')
 status_label.pack()
 
@@ -129,6 +152,12 @@ def update_info(event=None, refresh=False):
     if prices is None:
         info_label.config(text='Нет данных — проверьте подключение к интернету')
         return
+
+# --- Три фиксированных поля: USD / EUR / RUB (не зависят от комбобокса) ---
+    price_usd_label.config(text=f"Цена (USD): {format_price(prices.get('usd'))}")
+    price_eur_label.config(text=f"Цена (EUR): {format_price(prices.get('eur'))}")
+    price_rub_label.config(text=f"Цена (RUB): {format_price(prices.get('rub'))}")
+
 
     price = prices.get(target)
     price_text = f"{price:,.6f}".rstrip('0').rstrip('.') if price is not None else 'нет данных'
