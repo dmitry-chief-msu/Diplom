@@ -52,7 +52,16 @@ except requests.exceptions.RequestException as e:
 #      'last_updated': '2026-11-03T12:12:56.000Z'},
 # ]
 
+#currencies = {coin['symbol']: coin for coin in data}
+
+# Словарь: symbol -> coin
 currencies = {coin['symbol']: coin for coin in data}
+
+# Список для комбобокса: "Bitcoin (BTC)", "Ethereum (ETH)", ...
+combo_display_values = [f"{coin['name']} ({coin['symbol'].upper()})" for coin in data]
+# Обратное соответствие: "Bitcoin (BTC)" -> "btc"
+display_to_symbol = {f"{coin['name']} ({coin['symbol'].upper()})": coin['symbol'] for coin in data}
+
 
 # --- Форматирование цены ---
 def format_price(value) -> str:
@@ -95,35 +104,63 @@ def fetch_prices_for_coin(coin_id: str) -> dict:
 # --- GUI ---
 root = tk.Tk()
 root.title("Курсы криптовалют")
-root.geometry("440x360")
+root.geometry("440x440")
 
-tk.Label(root, text='Базовая валюта (coin)').pack(pady=5)
-base_combobox = ttk.Combobox(root, values=list(currencies.keys()), state='readonly')
+tk.Label(root, text='Базовая валюта (coin)', font=('Arial', 11, 'bold')).pack(pady=5)
+base_combobox = ttk.Combobox(root, values=combo_display_values, state='readonly')
 base_combobox.pack(pady=3, padx=10)
 base_combobox.current(0)
 
-tk.Label(root, text='Целевая валюта').pack(pady=5)
+tk.Label(root, text='Целевая валюта', font=('Arial', 11, 'bold')).pack(pady=5)
 target_combobox = ttk.Combobox(root, values=TARGET_CURRENCIES, state='readonly')
 target_combobox.pack(pady=3, padx=10)
 target_combobox.set('usd')
 
-info_label = tk.Label(root, text='', justify='left', anchor='w')
-info_label.pack(fill='x', padx=15, pady=8)
+# --- Рамка «Курс в выбранной валюте» ---
+course_frame = tk.LabelFrame(root, text="Курс в выбранной валюте",
+                             font=('Arial', 11, 'bold'), fg='#333333',
+                             bd=2, relief='groove', bg='#f5f5f7')
+course_frame.pack(fill='x', padx=15, pady=10)
 
+info_label = tk.Label(course_frame, text='', justify='left', anchor='w', bg='#f5f5f7')
+info_label.pack(fill='x', padx=10, pady=8)
 
-# --- Три поля по горизонтали: цена в USD / EUR / RUB ---
-prices_frame = tk.Frame(root)
-prices_frame.pack(fill='x', padx=15, pady=8)
+# --- Рамка «Котировки в основных валютах» ---
+prices_frame = tk.LabelFrame(root, text="Котировки в основных валютах",
+                             font=('Arial', 11, 'bold'), fg='#333333',
+                             bd=2, relief='groove', bg='#f5f5f7')
+prices_frame.pack(fill='x', padx=15, pady=10)
 
-price_usd_label = tk.Label(prices_frame, text='Цена (USD): —', anchor='w')
-price_eur_label = tk.Label(prices_frame, text='Цена (EUR): —', anchor='w')
-price_rub_label = tk.Label(prices_frame, text='Цена (RUB): —', anchor='w')
+price_usd_label = tk.Label(prices_frame, text='Цена (USD): —', anchor='w', bg='#f5f5f7')
+price_eur_label = tk.Label(prices_frame, text='Цена (EUR): —', anchor='w', bg='#f5f5f7')
+price_rub_label = tk.Label(prices_frame, text='Цена (RUB): —', anchor='w', bg='#f5f5f7')
 
-# Растягиваем все три колонки поровну
 prices_frame.columnconfigure((0, 1, 2), weight=1, uniform='price_cols')
-price_usd_label.grid(row=0, column=0, sticky='w')
-price_eur_label.grid(row=0, column=1, sticky='w')
-price_rub_label.grid(row=0, column=2, sticky='w')
+price_usd_label.grid(row=0, column=0, sticky='ew', padx=(10, 5), pady=8)
+price_eur_label.grid(row=0, column=1, sticky='ew', padx=5, pady=8)
+price_rub_label.grid(row=0, column=2, sticky='ew', padx=(5, 10), pady=8)
+
+
+# # --- Блок «Котировки в основных валютах» ---
+# prices_frame = tk.Frame(root, bd=2, relief='groove', bg='#f5f5f7')
+# prices_frame.pack(fill='x', padx=15, pady=10)
+#
+# # Заголовок внутри рамки
+# header_label = tk.Label(prices_frame, text="Котировки в основных валютах",
+#                         font=('Arial', 11, 'bold'), bg='#f5f5f7', fg='#333333')
+# header_label.grid(row=0, column=0, columnspan=3, sticky='w', padx=10, pady=(10, 5))
+#
+# # Три поля цен
+# price_usd_label = tk.Label(prices_frame, text='Цена (USD): —', anchor='w', bg='#f5f5f7')
+# price_eur_label = tk.Label(prices_frame, text='Цена (EUR): —', anchor='w', bg='#f5f5f7')
+# price_rub_label = tk.Label(prices_frame, text='Цена (RUB): —', anchor='w', bg='#f5f5f7')
+#
+# # Равномерное распределение колонок
+# prices_frame.columnconfigure((0, 1, 2), weight=1, uniform='price_cols')
+#
+# price_usd_label.grid(row=1, column=0, sticky='ew', padx=(10, 5), pady=5)
+# price_eur_label.grid(row=1, column=1, sticky='ew', padx=5, pady=5)
+# price_rub_label.grid(row=1, column=2, sticky='ew', padx=(5, 10), pady=5)
 
 status_label = tk.Label(root, text='', fg='gray')
 status_label.pack()
@@ -132,7 +169,17 @@ status_label.pack()
 prices_cache = {}
 
 def update_info(event=None, refresh=False):
-    base_sym = base_combobox.get()
+    #base_sym = base_combobox.get()
+
+    # Получаем отображаемую строку, например "Bitcoin (BTC)"
+    display_text = base_combobox.get()
+
+    # По ней находим символ монеты: "Bitcoin (BTC)" → "btc"
+    base_sym = display_to_symbol.get(display_text)
+    if base_sym is None:
+        # На всякий случай: если что-то пошло не так, пробуем взять первый элемент
+        base_sym = list(currencies.keys())[0]
+
     target = target_combobox.get()
     coin = currencies[base_sym]
 
