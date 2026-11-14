@@ -143,10 +143,10 @@ def load_all(refresh=False):
     # ИНТЕРФЕЙС
 
 root = tk.Tk()
-root.title("Курсы криптовалют")
+root.title("КриптоОКНО")
 root.geometry("440x440")
 
-tk.Label(root, text='Базовая валюта (coin)', font=('Arial', 11, 'bold')).pack(pady=5)
+tk.Label(root, text='Базовая валюта (криптовалюта)', font=('Arial', 11, 'bold')).pack(pady=5)
 base_combobox = ttk.Combobox(root, values=[], state='readonly', width=55)
 base_combobox.pack(pady=3, padx=10)
 
